@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: py-sec-mngr
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: py-sec-mngr
+    spec:
+      containers:
+      - name: py-sec-mngr
+        image: py-sec-mngr
+        ports:
+        - containerPort: 8000
+        env:
+          - name: PROJECT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: env-config
+                key: project_id
+          - name: SECRET_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: env-config
+                key: secret_name

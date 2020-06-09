@@ -1,0 +1,36 @@
+steps:
+- id: 'Build-Docker-Image'
+  name: 'gcr.io/cloud-builders/docker'
+  dir: 'src/app'
+  args: ['build',
+         '-t', 'gcr.io/$PROJECT_ID/py-sec-mngr:$SHORT_SHA',
+         '-t', 'gcr.io/$PROJECT_ID/py-sec-mngr:latest',
+         '-f', 'Dockerfile',
+         '.']
+
+- id: 'Push-the-Docker-Image-to-GCR'
+  waitFor: ['Build-Docker-Image']
+  name: 'gcr.io/cloud-builders/docker'
+  args: [ "push", "gcr.io/$PROJECT_ID/py-sec-mngr:$SHORT_SHA"]
+
+- id: 'Rename-image-hash'
+  waitFor: ['Push-the-Docker-Image-to-GCR']
+  name: 'ubuntu'
+  dir: 'k8s-manifests'
+  args: [ "sed", "-i", "s^image: py-sec-mngr^image: gcr.io/$PROJECT_ID/py-sec-mngr:$SHORT_SHA^g", "deploy.yaml" ]
+
+- id: 'Update-K8S'
+  waitFor: ['Rename-image-hash']
+  name: 'gcr.io/cloud-builders/kubectl'
+  args: ["apply",'-f', 'k8s']
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=${_K8S_ZONE}'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=${_K8S_CLUSTER}'
+
+substitutions:
+  _K8S_ZONE: us-east4-c # default value
+  _K8S_CLUSTER: secret-demo # default value
+  _SECRET_NAME: my-secret # default value
+
+images:
+- 'gcr.io/$PROJECT_ID/py-sec-mngr:latest'

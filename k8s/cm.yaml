@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+  namespace: default
+data:
+  project_id: PROJECT_ID
+  secret_name: SECRET_NAME
